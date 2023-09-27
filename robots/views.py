@@ -27,17 +27,17 @@ class RobotCreateView(View):
             if Robot.objects.filter(created=created, serial=serial).exists():
                 return JsonResponse({'message': 'Robot already registered'}, status=400)
 
-            # Check if a robot with the same model already exists
+            # Check if robot with the same model already exists
             if Robot.objects.filter(model=model).exists():
                 robot = Robot(model=model, version=version, created=created, serial=serial)
                 robot.save()
-                return JsonResponse({'message': 'Existing model, robot have been created'}, status=201)
+                return JsonResponse({'message': 'Existing model, a robot has been created'}, status=201)
 
-            # If robot is new model
+            # If robot is a new model
             else:
                 robot = Robot(model=model, version=version, created=created, serial=serial)
                 robot.save()
-                return JsonResponse({'message': 'New robot created successfully'}, status=201)
+                return JsonResponse({'message': 'A new robot created successfully'}, status=201)
 
         except KeyError:
             return JsonResponse({'error': 'Invalid JSON data'}, status=400)
@@ -73,7 +73,6 @@ def generate_excel(request):
             robot_count = model_version_robots.count()
             model_sheet.append([model, version, robot_count])
 
-    # Remove the default sheet (Sheet) created at the beginning
     default_sheet = wb['Sheet']
     wb.remove(default_sheet)
 
