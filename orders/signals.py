@@ -31,34 +31,31 @@ def send_email(sender, instance, **kwargs):
     # Check if there is a new corresponding robot
     matching_robot = Robot.objects.filter(serial=instance.robot_serial, available=True).first()
 
+    # Email data to send
+    model = instance.robot_serial[:2]
+    version = instance.robot_serial[3:]
+    subject = "Робот доступен в наличии"
+    message = f"Добрый день!\n\nНедавно вы интересовались нашим роботом модели {model}" \
+              f", версии {version}. Этот робот теперь в наличии. Если вам подходит этот вариант " \
+              f"- пожалуйста, свяжитесь с нами. "
+    recipient_list = [instance.customer.email]
+
+    # To send only one email
+    email_sent = False
+
     # If the robot was created when there is an unfulfilled order
-    if instance.completed:
-        model = instance.robot_serial[:2]
-        version = instance.robot_serial[3:]
-
-        subject = "Робот доступен в наличии"
-        message = f"Добрый день!\n\nНедавно вы интересовались нашим роботом модели {model}" \
-                  f", версии {version}. Этот робот теперь в наличии. Если вам подходит этот вариант " \
-                  f"- пожалуйста, свяжитесь с нами. "
-
-        recipient_list = [instance.customer.email]
+    if instance.completed and not email_sent:
         send_mail(subject, message, None, recipient_list)
+        email_sent = True
 
     # If an order is created with an already existing corresponding robot
-    elif matching_robot:
-        model = instance.robot_serial[:2]
-        version = instance.robot_serial[3:]
-
-        subject = "Робот доступен в наличии"
-        message = f"Добрый день!\n\nНедавно вы интересовались нашим роботом модели {model}" \
-                  f", версии {version}. Этот робот теперь в наличии. Если вам подходит этот вариант " \
-                  f"- пожалуйста, свяжитесь с нами. "
-
-        recipient_list = [instance.customer.email]
+    elif matching_robot and not email_sent:
         send_mail(subject, message, None, recipient_list)
+        email_sent = True
 
         instance.completed = True
         instance.save()
 
         matching_robot.available = False
         matching_robot.save()
+
