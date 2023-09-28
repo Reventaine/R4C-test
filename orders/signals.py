@@ -27,35 +27,33 @@ def update_robot_availability(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Order)
 def send_email(sender, instance, **kwargs):
+    if not instance.email_sent:
+        # Check if there is a new corresponding robot
+        matching_robot = Robot.objects.filter(serial=instance.robot_serial, available=True).first()
 
-    # Check if there is a new corresponding robot
-    matching_robot = Robot.objects.filter(serial=instance.robot_serial, available=True).first()
+        # Email data to send
+        model = instance.robot_serial[:2]
+        version = instance.robot_serial[3:]
+        subject = "Робот доступен в наличии"
+        message = f"Добрый день!\n\nНедавно вы интересовались нашим роботом модели {model}" \
+                  f", версии {version}. Этот робот теперь в наличии. Если вам подходит этот вариант " \
+                  f"- пожалуйста, свяжитесь с нами. "
+        recipient_list = [instance.customer.email]
 
-    # Email data to send
-    model = instance.robot_serial[:2]
-    version = instance.robot_serial[3:]
-    subject = "Робот доступен в наличии"
-    message = f"Добрый день!\n\nНедавно вы интересовались нашим роботом модели {model}" \
-              f", версии {version}. Этот робот теперь в наличии. Если вам подходит этот вариант " \
-              f"- пожалуйста, свяжитесь с нами. "
-    recipient_list = [instance.customer.email]
+        if instance.completed:
+            # Send email and mark
+            send_mail(subject, message, None, recipient_list)
+            instance.email_sent = True
+            instance.save()
 
-    # To send only one email
-    email_sent = False
+        elif matching_robot:
+            # Send email and mark, update robot and order statuses
+            send_mail(subject, message, None, recipient_list)
 
-    # If the robot was created when there is an unfulfilled order
-    if instance.completed and not email_sent:
-        send_mail(subject, message, None, recipient_list)
-        email_sent = True
+            instance.completed = True
+            instance.email_sent = True
+            instance.save()
 
-    # If an order is created with an already existing corresponding robot
-    elif matching_robot and not email_sent:
-        send_mail(subject, message, None, recipient_list)
-        email_sent = True
-
-        instance.completed = True
-        instance.save()
-
-        matching_robot.available = False
-        matching_robot.save()
+            matching_robot.available = False
+            matching_robot.save()
 

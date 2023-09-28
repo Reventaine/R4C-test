@@ -7,4 +7,5 @@ class Order(models.Model):
     robot_serial = models.CharField(max_length=5, blank=False, null=False)
 
     completed = models.BooleanField(default=False)
+    email_sent = models.BooleanField(default=False)
 
